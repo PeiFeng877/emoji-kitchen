@@ -13,7 +13,7 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import DownloadIcon from "@mui/icons-material/Download";
 import ShareIcon from "@mui/icons-material/Share";
-import React, { useRef } from "react";
+import React, { useState, useRef } from "react";
 import { getEmojiData, getNotoEmojiUrl } from "./utils";
 import PromptEditorButton from "./prompt-editor-simple";
 import html2canvas from "html2canvas";
