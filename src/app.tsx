@@ -1,3 +1,4 @@
+import React from "react";
 import {
   amber,
   blue,
@@ -15,8 +16,7 @@ import {
   teal,
 } from "@mui/material/colors";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import Footer from "./Components/footer";
-import Kitchen from "./Components/kitchen";
+import SimpleKitchen from "./Components/simple-kitchen";
 
 // 🌈
 const colors = [
@@ -43,21 +43,9 @@ const theme = createTheme({
 });
 
 export default function App() {
-  if (window.self === window.top) {
-    return (
-      <div
-        style={{
-          minHeight: "100dvh",
-          maxHeight: "100dvh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <ThemeProvider theme={theme}>
-          <Kitchen />
-        </ThemeProvider>
-        <Footer />
-      </div>
-    );
-  }
+  return (
+    <ThemeProvider theme={theme}>
+      <SimpleKitchen />
+    </ThemeProvider>
+  );
 }
