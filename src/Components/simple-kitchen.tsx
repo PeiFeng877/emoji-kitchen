@@ -441,14 +441,15 @@ export default function SimpleKitchen() {
             }}
           >
             <Container maxWidth="lg" sx={{ py: 2 }}>
-              {/* 锐评生成器 */}
-              <CommentGenerator
-                leftEmoji={selectedLeftEmoji}
-                rightEmoji={selectedRightEmoji}
-                currentPrompt={currentPrompt}
-                onPromptUpdate={handlePromptUpdate}
-                onAddLog={addLog}
-              />
+            {/* 锐评生成器 */}
+            <CommentGenerator
+              leftEmoji={selectedLeftEmoji}
+              rightEmoji={selectedRightEmoji}
+              currentPrompt={currentPrompt}
+              onPromptUpdate={handlePromptUpdate}
+              onAddLog={addLog}
+              logs={logs}
+            />
 
               {/* Emoji选择器 */}
               <EmojiSelector

@@ -8,11 +8,15 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import DownloadIcon from "@mui/icons-material/Download";
 import ShareIcon from "@mui/icons-material/Share";
+import HistoryIcon from "@mui/icons-material/History";
 import React, { useState, useRef } from "react";
 import { getEmojiData, getNotoEmojiUrl } from "./utils";
 import PromptEditorButton from "./prompt-editor-simple";
@@ -32,13 +36,23 @@ interface CommentGeneratorProps {
   onPromptUpdate: (prompt: string) => void;
   onAddLog?: (result?: CommentData) => void;
   buttonOnly?: boolean;
+  logs?: Array<{
+    timestamp: Date;
+    leftEmoji: string;
+    rightEmoji: string;
+    combinedEmoji?: string;
+    prompt: string;
+    result?: CommentData;
+  }>;
 }
 
-export default function CommentGenerator({ leftEmoji, rightEmoji, currentPrompt, onPromptUpdate, onAddLog, buttonOnly = false }: CommentGeneratorProps) {
+export default function CommentGenerator({ leftEmoji, rightEmoji, currentPrompt, onPromptUpdate, onAddLog, buttonOnly = false, logs = [] }: CommentGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [comment, setComment] = useState<CommentData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [logsDialogOpen, setLogsDialogOpen] = useState(false);
+  const [selectedLogIndex, setSelectedLogIndex] = useState(0);
   
   // 用于保存图片的ref
   const cardRef = useRef<HTMLDivElement>(null);
@@ -63,7 +77,7 @@ export default function CommentGenerator({ leftEmoji, rightEmoji, currentPrompt,
   // 生成锐评
   const generateComment = async () => {
     if (!leftEmoji || !rightEmoji) return;
-    
+
     const leftEmojiData = getEmojiData(leftEmoji);
     const rightEmojiData = getEmojiData(rightEmoji);
 
@@ -254,7 +268,7 @@ export default function CommentGenerator({ leftEmoji, rightEmoji, currentPrompt,
       ) : (
         // 显示完整界面
         <>
-          {/* 两个按钮并排 */}
+          {/* 三个按钮并排 */}
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
             <Button
               variant="contained"
@@ -263,6 +277,17 @@ export default function CommentGenerator({ leftEmoji, rightEmoji, currentPrompt,
               sx={{ px: 3, py: 1 }}
             >
               {loading ? '生成中...' : '生成锐评'}
+            </Button>
+
+            {/* 查看历史日志按钮 */}
+            <Button
+              variant="outlined"
+              onClick={() => setLogsDialogOpen(true)}
+              disabled={logs.length === 0}
+              startIcon={<HistoryIcon />}
+              sx={{ px: 2, py: 1 }}
+            >
+              查看日志
             </Button>
 
             {/* 修改提示词按钮 */}
@@ -610,6 +635,233 @@ export default function CommentGenerator({ leftEmoji, rightEmoji, currentPrompt,
                   关闭
                 </Button>
               </Box>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 历史日志对话框 */}
+      <Dialog
+        open={logsDialogOpen}
+        onClose={() => setLogsDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            height: '80vh',
+            display: 'flex',
+            flexDirection: 'column'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          历史日志
+          <IconButton onClick={() => setLogsDialogOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          {logs.length > 0 ? (
+            <Box sx={{ display: 'flex', height: '100%' }}>
+              {/* 左侧日志列表 */}
+              <Box sx={{ width: '30%', borderRight: 1, borderColor: 'divider', overflowY: 'auto' }}>
+                <List>
+                  {logs.map((log, index) => (
+                    <ListItem
+                      key={index}
+                      button
+                      selected={selectedLogIndex === index}
+                      onClick={() => setSelectedLogIndex(index)}
+                      sx={{
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        py: 1.5,
+                        '&.Mui-selected': {
+                          backgroundColor: 'primary.main',
+                          color: 'primary.contrastText',
+                          '&:hover': {
+                            backgroundColor: 'primary.dark',
+                          }
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        {log.leftEmoji && (
+                          <img
+                            src={getNotoEmojiUrl(getEmojiData(log.leftEmoji).emojiCodepoint)}
+                            alt=""
+                            style={{ width: 24, height: 24 }}
+                          />
+                        )}
+                        <Typography variant="body2">+</Typography>
+                        {log.rightEmoji && (
+                          <img
+                            src={getNotoEmojiUrl(getEmojiData(log.rightEmoji).emojiCodepoint)}
+                            alt=""
+                            style={{ width: 24, height: 24 }}
+                          />
+                        )}
+                        {log.combinedEmoji && (
+                          <>
+                            <Typography variant="body2">=</Typography>
+                            <img
+                              src={log.combinedEmoji}
+                              alt=""
+                              style={{ width: 24, height: 24 }}
+                            />
+                          </>
+                        )}
+                      </Box>
+                      <Typography variant="caption">
+                        {new Date(log.timestamp).toLocaleString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+
+              {/* 右侧详情 */}
+              <Box sx={{ flex: 1, p: 2, overflowY: 'auto' }}>
+                {logs[selectedLogIndex] && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      {new Date(logs[selectedLogIndex].timestamp).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </Typography>
+
+                    <Paper sx={{ p: 2, mb: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Emoji 组合
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                        {logs[selectedLogIndex].leftEmoji && (
+                          <>
+                            <img
+                              src={getNotoEmojiUrl(getEmojiData(logs[selectedLogIndex].leftEmoji).emojiCodepoint)}
+                              alt={getEmojiData(logs[selectedLogIndex].leftEmoji).alt}
+                              style={{ width: 48, height: 48 }}
+                            />
+                            <Typography variant="body2">
+                              {getEmojiData(logs[selectedLogIndex].leftEmoji).alt}
+                            </Typography>
+                          </>
+                        )}
+                        <Typography variant="h6">+</Typography>
+                        {logs[selectedLogIndex].rightEmoji && (
+                          <>
+                            <img
+                              src={getNotoEmojiUrl(getEmojiData(logs[selectedLogIndex].rightEmoji).emojiCodepoint)}
+                              alt={getEmojiData(logs[selectedLogIndex].rightEmoji).alt}
+                              style={{ width: 48, height: 48 }}
+                            />
+                            <Typography variant="body2">
+                              {getEmojiData(logs[selectedLogIndex].rightEmoji).alt}
+                            </Typography>
+                          </>
+                        )}
+                        {logs[selectedLogIndex].combinedEmoji && (
+                          <>
+                            <Typography variant="h6">=</Typography>
+                            <img
+                              src={logs[selectedLogIndex].combinedEmoji}
+                              alt=""
+                              style={{ width: 48, height: 48 }}
+                            />
+                          </>
+                        )}
+                      </Box>
+                    </Paper>
+
+                    <Paper sx={{ p: 2, mb: 2, flex: 1 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        使用的提示词
+                      </Typography>
+                      <TextField
+                        multiline
+                        fullWidth
+                        value={logs[selectedLogIndex].prompt}
+                        variant="outlined"
+                        InputProps={{
+                          readOnly: true,
+                          sx: {
+                            fontFamily: 'monospace',
+                            fontSize: '0.875rem',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: 'none'
+                            }
+                          }
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'grey.50',
+                          }
+                        }}
+                      />
+                    </Paper>
+
+                    {logs[selectedLogIndex].result && (
+                      <Paper sx={{ p: 2 }}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          AI 返回的结果
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              组合
+                            </Typography>
+                            <Typography variant="body1">
+                              {logs[selectedLogIndex].result.组合}
+                            </Typography>
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              解读
+                            </Typography>
+                            <Typography variant="body1">
+                              {logs[selectedLogIndex].result.解读}
+                            </Typography>
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              锐评
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                              {logs[selectedLogIndex].result.锐评}
+                            </Typography>
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              补刀
+                            </Typography>
+                            <Typography variant="body2">
+                              {logs[selectedLogIndex].result.补刀}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Typography variant="h6" color="text.secondary">
+                暂无历史记录
+              </Typography>
             </Box>
           )}
         </DialogContent>
